@@ -31,6 +31,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
                 LEFT JOIN b.reviews r
             WHERE b.id = :bookId
             GROUP BY b.title, a.firstName, a.lastName""")
+    @QueryHints(@QueryHint(name = AvailableHints.HINT_CACHEABLE, value = "true"))
     List<BookAuthorReview> findBookWithAuthorsAndReviews_DTO(Long bookId);
 
     List<BookAuthorName> findBookAuthorNameById(Long id);
@@ -43,5 +44,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
             LEFT JOIN FETCH b.authors
             LEFT JOIN b.authors a
         WHERE a.id = :authorId""")
-    List<Book> findBookWithAuthors(Long authorId);
+    @QueryHints(@QueryHint(name = AvailableHints.HINT_CACHEABLE, value = "true"))
+    List<Book> findBookWithAuthorsByAuthorId(Long authorId);
 }

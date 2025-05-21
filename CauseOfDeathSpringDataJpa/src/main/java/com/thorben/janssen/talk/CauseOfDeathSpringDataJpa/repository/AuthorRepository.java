@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface AuthorRepository extends JpaRepository<Author, Long> {
 
-    @Query("SELECT a FROM Author a LEFT JOIN FETCH a.books WHERE a.id = :authorId")
+    @Query("SELECT a  FROM Author a LEFT JOIN FETCH a.books WHERE a.id = :authorId")
     Author findAuthorWithBooks(Long authorId);
 
     @Query("SELECT DISTINCT a FROM Author a LEFT JOIN FETCH a.books b WHERE b.id = :bookId")

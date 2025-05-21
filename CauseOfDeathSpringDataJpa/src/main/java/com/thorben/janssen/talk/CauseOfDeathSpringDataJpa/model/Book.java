@@ -1,6 +1,8 @@
 package com.thorben.janssen.talk.CauseOfDeathSpringDataJpa.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cache;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,14 +21,14 @@ public class Book {
 	private String title;
 
 	@ManyToMany(cascade = CascadeType.ALL)
-    // @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
+//    @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
 //	private List<Author> authors = new ArrayList<Author>();
 	 private Set<Author> authors = new HashSet<Author>();
 
 	@OneToMany(mappedBy = "book"
 		// , fetch = FetchType.EAGER
 	)
-	// @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
+//	 @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
 //	private List<Review> reviews = new ArrayList<>();
 	 private Set<Review> reviews = new HashSet<>();
 

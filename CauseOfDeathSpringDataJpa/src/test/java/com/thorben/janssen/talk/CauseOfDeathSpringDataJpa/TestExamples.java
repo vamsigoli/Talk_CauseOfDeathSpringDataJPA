@@ -9,6 +9,7 @@ import com.thorben.janssen.talk.CauseOfDeathSpringDataJpa.repository.BookReposit
 
 import jakarta.persistence.EntityManager;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ public class TestExamples {
 	private BookRepository bookRepository;
 
 	@Autowired
-	private EntityManager em;
+	private EntityManagerFactory emf;
 
 	@Test
 	public void readOneAuthorWithBooks() {
@@ -107,104 +108,63 @@ public class TestExamples {
 
 	}
 
-//	@Test
-//	public void cacheBookWithAuthorsAndReviews() {
-//		log.info("... cacheBookWithAuthorsAndReviews ...");
-//
-//		// 1st iteration - Execute query and store result in cache
-//		EntityManager em = emf.createEntityManager();
-//		em.getTransaction().begin();
-//
-//		TypedQuery<Book> q = em.createQuery(
-//				"SELECT DISTINCT b FROM Book b LEFT JOIN FETCH b.authors a LEFT JOIN FETCH b.reviews r",
-//				Book.class);
-//		q.setHint(AvailableHints.HINT_CACHEABLE, true);
-//		List<Book> books = q.getResultList();
-//
-//		em.getTransaction().commit();
-//		em.close();
-//
-//		log.info("2nd iteration");
-//
-//		// 2nd iteration - Query result should be cached
-//		em = emf.createEntityManager();
-//		em.getTransaction().begin();
-//
-//		q = em.createQuery(
-//				"SELECT DISTINCT b FROM Book b LEFT JOIN FETCH b.authors a LEFT JOIN FETCH b.reviews r",
-//				Book.class);
-//		q.setHint(AvailableHints.HINT_CACHEABLE, true);
-//		books = q.getResultList();
-//		log.info("Initialize associations");
-//		for (Book b : books) {
-//			Hibernate.initialize(b.getAuthors());
-//			Hibernate.initialize(b.getReviews());
-//		}
-//
-//		em.getTransaction().commit();
-//		em.close();
-//
-//		for (Book b : books) {
-//			log.info("Book " + b.getTitle()
-//				+ " was written by "
-//				+ b.getAuthors().stream().map(a -> a.getFirstName()+" "+a.getLastName()).collect(Collectors.joining(", "))
-//				+ " and got " + b.getReviews().size()+" reviews");
-//		}
-//
-//	}
-//
-//	@Test
-//	public void cacheBookWithAuthorsAndReviewsDtos() {
-//		log.info("... cacheBookWithAuthorsAndReviewsDtos ...");
-//
-//		// 1st iteration - Execute query and store result in cache
-//		EntityManager em = emf.createEntityManager();
-//		em.getTransaction().begin();
-//
-//		TypedQuery<BookAuthorReview> q = em.createQuery(
-//				"SELECT new com.thorben.janssen.causeOfDeathSpringDataJpa.dto.BookAuthorReview(b.title, CAST(STRING_AGG(a.firstName || ' ' || a.lastName, ', ') as text), count(r.id)) FROM Book b LEFT JOIN b.authors a LEFT JOIN b.reviews r GROUP BY b.title",
-//				BookAuthorReview.class);
-//		q.setHint(AvailableHints.HINT_CACHEABLE, true);
-//		List<BookAuthorReview> books = q.getResultList();
-//
-//		em.getTransaction().commit();
-//		em.close();
-//
-//		// 2nd iteration - Query result should be cached
-//        em = emf.createEntityManager();
-//		em.getTransaction().begin();
-//
-//		q = em.createQuery(
-//				"SELECT new com.thorben.janssen.causeOfDeathSpringDataJpa.dto.BookAuthorReview(b.title, CAST(STRING_AGG(a.firstName || ' ' || a.lastName, ', ') as text), count(r.id)) FROM Book b LEFT JOIN b.authors a LEFT JOIN b.reviews r GROUP BY b.title",
-//				BookAuthorReview.class);
-//		q.setHint(AvailableHints.HINT_CACHEABLE, true);
-//		books = q.getResultList();
-//
-//		em.getTransaction().commit();
-//		em.close();
-//
-//		for (BookAuthorReview b : books) {
-//			log.info("Book " + b.getTitle() + " was written by " + b.getAuthorNames() + " and got " + b.getReviewCount()
-//					+ " reviews");
-//		}
-//	}
-//
-	private void logBooks(EntityManager em) {
+	@Test
+	public void cacheBookWithAuthorsAndReviews() {
+		log.info("... cacheBookWithAuthorsAndReviews ...");
+
+		// 1st iteration - Execute query and store result in cache
+		log.info("1st iteration");
+		List<Book> books = bookRepository.findBookWithAuthorsByAuthorId(1L);
+		for (Book b : books) {
+			log.info("Book " + b.getTitle()
+					+ " was written by "
+					+ b.getAuthors().stream().map(a -> a.getFirstName()+" "+a.getLastName()).collect(Collectors.joining(", ")));
+		}
+
+
+		log.info("2nd iteration");
+		books = bookRepository.findBookWithAuthorsByAuthorId(1L);
+
+		for (Book b : books) {
+			log.info("Book " + b.getTitle()
+				+ " was written by "
+				+ b.getAuthors().stream().map(a -> a.getFirstName()+" "+a.getLastName()).collect(Collectors.joining(", ")));
+		}
+
+	}
+
+	@Test
+	public void cacheBookWithAuthorsAndReviewsDtos() {
+		log.info("... cacheBookWithAuthorsAndReviewsDtos ...");
+
+		// 1st iteration - Execute query and store result in cache
+		List<BookAuthorReview> books = bookRepository.findBookWithAuthorsAndReviews_DTO(1L);
+
+		// 2nd iteration - Query result should be cached
+		books = bookRepository.findBookWithAuthorsAndReviews_DTO(1L);
+
+		for (BookAuthorReview b : books) {
+			log.info("Book " + b.getTitle() + " was written by " + b.getFirstName() + " " + b.getLastName()
+					+ " and got " + b.getReviewCount() + " reviews");
+		}
+	}
+
+	private void logBooks() {
 		log.info("##########  Books  ################");
 		List<Book> books = bookRepository.findAll();
 		for (Book b : books) {
 			log.info(b);
 		}
-		em.clear();
+//		em.clear();
 	}
 
-	private void logBooksOfAuthor2(EntityManager em) {
+	private void logBooksOfAuthor2() {
 		log.info("##########  Books  ################");
-		List<Book> books = bookRepository.findBookWithAuthors(2L);
+		List<Book> books = bookRepository.findBookWithAuthorsByAuthorId(2L);
 		for (Book b : books) {
 			log.info(b + " was written by " + b.getAuthors().stream().map(a -> a.getId().toString()).collect(Collectors.joining(", ")));
 		}
-		em.clear();
+//		em.clear();
 	}
 
 	//
@@ -260,41 +220,36 @@ public class TestExamples {
 			b.getAuthors().stream().map(author -> author.getFirstName()+" "+a.getLastName()).collect(Collectors.joining(", ")));
 	}
 
-	// @Test
-	// public void openSessionInView() {
-	// 	log.info("... openSessionInView ...");
-	// 	EntityManager em1 = emf.createEntityManager();
-	// 	em1.getTransaction().begin();
-
-	// 	Object[] r = (Object[]) em1.createQuery("SELECT a, count(b.id) FROM Author a JOIN a.books b WHERE a.id=1 GROUP BY a.id").getSingleResult();
-	// 	Author a = (Author) r[0];
-	// 	long bookCount = (long) r[1];
-
-	// 	parallelTransaction();
-
-	// 	em1.getTransaction().commit();
-	// 	log.info("Transaction committed");
-
-	// 	log.info("Author "+a.getFirstName()+" "+a.getLastName()+" wrote "+bookCount+" books.");
-	// 	log.info("These are: "+a.getBooks().stream().map(book -> book.getTitle()).collect(Collectors.joining(", ")));
-
-	// 	em1.close();
-	// }
+//	 @Test
+//	 public void openSessionInView() {
+//	 	log.info("... openSessionInView ...");
+//	 	EntityManager em1 = emf.createEntityManager();
+//	 	em1.getTransaction().begin();
+//
+//	 	Author a = em1.createQuery("SELECT a FROM Author a JOIN a.books b WHERE b.title = 'Book 1'", Author.class).getSingleResult();
+//
+//	 	parallelTransaction();
+//
+//	 	log.info("Transaction committed");
+//
+//	 	log.info("Author "+a.getFirstName()+" "+a.getLastName()+" wrote "+a.getBooks().stream().map(book -> book.getTitle()).collect(Collectors.joining(", ")));
+//
+//		em1.getTransaction().commit();
+//	 	em1.close();
+//	 }
 //
 //	private void parallelTransaction() {
 //		EntityManager em = emf.createEntityManager();
 //		em.getTransaction().begin();
 //
-//		Author a = em.find(Author.class, 1L);
 //		Book b = em.find(Book.class, 1L);
 //
-//		a.getBooks().remove(b);
-//		b.getAuthors().remove(a);
+//		b.setTitle("changed");
 //
 //		em.getTransaction().commit();
 //		em.close();
 //	}
-//
+
 	//
 	// LOST DATA
 	//
@@ -303,7 +258,9 @@ public class TestExamples {
 	@Transactional
 	public void clearWithoutFlush() {
 		log.info("... clearWithoutFlush ...");
-		
+		EntityManager em = this.emf.createEntityManager();
+		em.joinTransaction();
+
 		Slice<Book> books = bookRepository.findAllBooksBy(PageRequest.of(0, 5, Sort.by("id")));
 		boolean loop = true;
 		while(loop) {
@@ -337,14 +294,14 @@ public class TestExamples {
 		log.info("... removeAuthorsAndBooks ...");
 		
 		log.info("Before removing Author 1");
-		logBooks(em);
-		// logBooksOfAuthor2(em);
+		logBooks();
+		// logBooksOfAuthor2();
 
 		Author a = authorRepository.findById(1L).orElseThrow();
-		em.remove(a);
+		authorRepository.delete(a);
 
 		log.info("After removing Author 1");
-		logBooks(em);
-		// logBooksOfAuthor2(em);
+		logBooks();
+		// logBooksOfAuthor2();
 	}
 }
