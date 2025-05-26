@@ -37,7 +37,7 @@ public class TestExamples {
 	private BookRepository bookRepository;
 
 	@Autowired
-	private EntityManagerFactory emf;
+	private EntityManager em;
 
 	@Test
 	public void readOneAuthorWithBooks() {
@@ -85,30 +85,6 @@ public class TestExamples {
 	}
 
 	@Test
-	@Transactional
-	public void readBookAuthorName() {
-		log.info("... readBookAuthorName ...");
-
-		List<BookAuthorName> books = bookRepository.findBookAuthorNameById(2L);
-
-		books.forEach(b -> log.info("Book " + b.getTitle() + " was written by " + b.getAuthors()));
-
-	}
-
-	@Test
-	public void readBookWithAuthorsAndReviewsDtos() {
-		log.info("... readBookWithAuthorsAndReviewsDtos ...");
-
-		List<BookAuthorReview> books = bookRepository.findBookWithAuthorsAndReviews_DTO(2L);
-
-		books.forEach(b ->
-			log.info("Book " + b.getTitle()
-					+ " was written by " + b.getFirstName() + " " + b.getLastName()
-					+ " and got " + b.getReviewCount() + " reviews"));
-
-	}
-
-	@Test
 	public void cacheBookWithAuthorsAndReviews() {
 		log.info("... cacheBookWithAuthorsAndReviews ...");
 
@@ -134,6 +110,28 @@ public class TestExamples {
 	}
 
 	@Test
+	@Transactional
+	public void readBookAuthorName() {
+		log.info("... readBookAuthorName ...");
+
+		List<BookAuthorName> books = bookRepository.findBookAuthorNameById_Improved(2L);
+
+		books.forEach(b -> log.info("Book " + b.getTitle() + b.getAuthors().size()));
+	}
+
+	@Test
+	public void readBookWithAuthorsAndReviewsDtos() {
+		log.info("... readBookWithAuthorsAndReviewsDtos ...");
+
+		List<BookAuthorReview> books = bookRepository.findBookWithAuthorsAndReviews_DTO(2L);
+
+		books.forEach(b ->
+				log.info("Book " + b.getTitle()
+						+ " was written by " + b.getAuthorNames()
+						+ " and got " + b.getReviewCount() + " reviews"));
+	}
+
+	@Test
 	public void cacheBookWithAuthorsAndReviewsDtos() {
 		log.info("... cacheBookWithAuthorsAndReviewsDtos ...");
 
@@ -144,7 +142,7 @@ public class TestExamples {
 		books = bookRepository.findBookWithAuthorsAndReviews_DTO(1L);
 
 		for (BookAuthorReview b : books) {
-			log.info("Book " + b.getTitle() + " was written by " + b.getFirstName() + " " + b.getLastName()
+			log.info("Book " + b.getTitle() + " was written by " + b.getAuthorNames()
 					+ " and got " + b.getReviewCount() + " reviews");
 		}
 	}
@@ -155,7 +153,6 @@ public class TestExamples {
 		for (Book b : books) {
 			log.info(b);
 		}
-//		em.clear();
 	}
 
 	private void logBooksOfAuthor2() {
@@ -164,7 +161,6 @@ public class TestExamples {
 		for (Book b : books) {
 			log.info(b + " was written by " + b.getAuthors().stream().map(a -> a.getId().toString()).collect(Collectors.joining(", ")));
 		}
-//		em.clear();
 	}
 
 	//
@@ -172,8 +168,8 @@ public class TestExamples {
 	//
 
 	@Test
-	public void readAuthorsOfBook2() {
-		log.info("... readAuthorsOfBook2 ...");
+	public void joinVsJoinFetch() {
+		log.info("... joinVsJoinFetch ...");
 		
 		List<Author> authors = authorRepository.findAuthorOfBooks(2L);
 
@@ -209,9 +205,9 @@ public class TestExamples {
 		Author a = authorRepository.findById(1L).orElseThrow();
 		Book b = bookRepository.findById(1L).orElseThrow();
 
-        a.getBooks().remove(b);
+//        a.getBooks().remove(b);
 		// b.getAuthors().remove(a);
-		// b.removeAuthor(a);
+		 b.removeAuthor(a);
 
 		log.info("Author "+a.getFirstName()+" "+a.getLastName()+" wrote "+
 			a.getBooks().stream().map(book -> book.getTitle()).collect(Collectors.joining(", ")));
@@ -219,36 +215,6 @@ public class TestExamples {
 		log.info("The book "+b.getTitle()+" was written by "+
 			b.getAuthors().stream().map(author -> author.getFirstName()+" "+a.getLastName()).collect(Collectors.joining(", ")));
 	}
-
-//	 @Test
-//	 public void openSessionInView() {
-//	 	log.info("... openSessionInView ...");
-//	 	EntityManager em1 = emf.createEntityManager();
-//	 	em1.getTransaction().begin();
-//
-//	 	Author a = em1.createQuery("SELECT a FROM Author a JOIN a.books b WHERE b.title = 'Book 1'", Author.class).getSingleResult();
-//
-//	 	parallelTransaction();
-//
-//	 	log.info("Transaction committed");
-//
-//	 	log.info("Author "+a.getFirstName()+" "+a.getLastName()+" wrote "+a.getBooks().stream().map(book -> book.getTitle()).collect(Collectors.joining(", ")));
-//
-//		em1.getTransaction().commit();
-//	 	em1.close();
-//	 }
-//
-//	private void parallelTransaction() {
-//		EntityManager em = emf.createEntityManager();
-//		em.getTransaction().begin();
-//
-//		Book b = em.find(Book.class, 1L);
-//
-//		b.setTitle("changed");
-//
-//		em.getTransaction().commit();
-//		em.close();
-//	}
 
 	//
 	// LOST DATA
@@ -258,7 +224,6 @@ public class TestExamples {
 	@Transactional
 	public void clearWithoutFlush() {
 		log.info("... clearWithoutFlush ...");
-		EntityManager em = this.emf.createEntityManager();
 		em.joinTransaction();
 
 		Slice<Book> books = bookRepository.findAllBooksBy(PageRequest.of(0, 5, Sort.by("id")));
@@ -270,7 +235,7 @@ public class TestExamples {
 
 				i++;
 				if (i%5==0) {
-					// em.flush();
+//					em.flush();
 					em.clear();
 				}
 			}
@@ -281,9 +246,9 @@ public class TestExamples {
 			}
 		}
 
-		List<Book> bs = em.createQuery("SELECT b FROM Book b", Book.class).getResultList();
-		for (Book b : bs) {
-			log.info(b.getTitle());
+		List<String> titles = em.createQuery("SELECT b.title FROM Book b", String.class).getResultList();
+		for (String title : titles) {
+			log.info(title);
 		}
 	}
 

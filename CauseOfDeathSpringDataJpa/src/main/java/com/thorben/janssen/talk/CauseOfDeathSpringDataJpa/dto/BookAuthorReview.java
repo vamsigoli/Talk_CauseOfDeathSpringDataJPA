@@ -4,9 +4,7 @@ public interface BookAuthorReview {
 
     String getTitle();
 
-    String getFirstName();
-
-    String getLastName();
+    String getAuthorNames();
 
     String getReviewCount();
 }

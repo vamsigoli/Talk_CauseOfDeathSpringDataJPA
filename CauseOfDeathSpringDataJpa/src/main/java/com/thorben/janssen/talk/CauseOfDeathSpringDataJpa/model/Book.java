@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Cache;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -22,7 +24,7 @@ public class Book {
 
 	@ManyToMany(cascade = CascadeType.ALL)
 //    @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
-//	private List<Author> authors = new ArrayList<Author>();
+//	private List<Author> authors = new ArrayList<>();
 	 private Set<Author> authors = new HashSet<Author>();
 
 	@OneToMany(mappedBy = "book"

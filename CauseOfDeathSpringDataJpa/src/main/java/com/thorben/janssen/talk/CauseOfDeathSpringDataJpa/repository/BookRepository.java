@@ -25,16 +25,19 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     Book findBookWithAuthorsAndReviews(Long bookId);
 
     @Query("""
-            SELECT b.title as title, a.firstName as firstName, a.lastName as lastName, count(r.id) as reviewCount
+            SELECT b.title as title, STRING_AGG(a.firstName || ' ' || a.lastName, ', ') as authorNames, count(r.id) as reviewCount
             FROM Book b
                 LEFT JOIN b.authors a
                 LEFT JOIN b.reviews r
             WHERE b.id = :bookId
-            GROUP BY b.title, a.firstName, a.lastName""")
+            GROUP BY b.title""")
     @QueryHints(@QueryHint(name = AvailableHints.HINT_CACHEABLE, value = "true"))
     List<BookAuthorReview> findBookWithAuthorsAndReviews_DTO(Long bookId);
 
     List<BookAuthorName> findBookAuthorNameById(Long id);
+
+    @Query("SELECT b FROM Book b LEFT JOIN FETCH b.authors LEFT JOIN FETCH b.reviews WHERE b.id = :id")
+    List<BookAuthorName> findBookAuthorNameById_Improved(Long id);
 
     Slice<Book> findAllBooksBy(Pageable page);
 
@@ -44,6 +47,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
             LEFT JOIN FETCH b.authors
             LEFT JOIN b.authors a
         WHERE a.id = :authorId""")
-    @QueryHints(@QueryHint(name = AvailableHints.HINT_CACHEABLE, value = "true"))
+//    @QueryHints(@QueryHint(name = AvailableHints.HINT_CACHEABLE, value = "true"))
     List<Book> findBookWithAuthorsByAuthorId(Long authorId);
 }
